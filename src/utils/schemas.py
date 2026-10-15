@@ -44,8 +44,7 @@ class CustomerRow(BaseModel):
     first_name: str
     last_name: str
     email: str
-    city: str
-    country: str
+    address: dict
     signup_date: date
     tier: Optional[str] = "standard"
 
@@ -55,6 +54,15 @@ class CustomerRow(BaseModel):
         if "@" not in v:
             raise ValueError(f"invalid email: {v}")
         return v.lower()
+    
+    @field_validator("address")
+    @classmethod
+    def address_format(cls, v: dict) -> dict:   # str → dict
+        if not v.get("city"):                   # drop ast.literal_eval, use .get()
+            raise ValueError("no city found")
+        if not v.get("country"):
+            raise ValueError("no country found")
+        return v
 
 
 class ProductRow(BaseModel):
@@ -71,3 +79,10 @@ class ProductRow(BaseModel):
         if v < 0:
             raise ValueError(f"unit_cost must be >= 0, got {v}")
         return v
+
+
+SOURCE_SCHEMAS: dict[str, dict] = {
+    "orders":    {"model": OrderRow,    "primary_key": "order_id"},
+    "customers": {"model": CustomerRow, "primary_key": "customer_id"},
+    "products":  {"model": ProductRow,  "primary_key": "product_id"},
+}
